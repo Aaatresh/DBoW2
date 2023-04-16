@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stdint.h>
 #include <limits.h>
+#include <iostream>
 
 #include "FORB.h"
 
@@ -81,6 +82,9 @@ double FORB::distance(const FORB::TDescriptor &a,
   // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
   // This implementation assumes that a.cols (CV_8U) % sizeof(uint64_t) == 0
   
+  // std::cout << "\ta size: " << a.size() << "\t" << a.cols / sizeof(uint64_t) << "\n";
+  // std::cout << "\tb.size: " << b.size() << "\t" << b.cols / sizeof(uint64_t) << "\n";
+
   const uint64_t *pa, *pb;
   pa = a.ptr<uint64_t>(); // a & b are actually CV_8U
   pb = b.ptr<uint64_t>(); 
@@ -97,6 +101,8 @@ double FORB::distance(const FORB::TDescriptor &a,
       (sizeof(uint64_t) - 1) * CHAR_BIT;
   }
   
+  // abort();
+
   return static_cast<double>(ret);
   
   // // If uint64_t is not defined in your system, you can try this 

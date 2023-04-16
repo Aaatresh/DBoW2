@@ -17,22 +17,18 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/features2d.hpp>
 
+#include <cstdlib>
 
 using namespace DBoW2;
 using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-void loadFeatures(vector<vector<cv::Mat > > &features);
+void loadFeatures(vector<vector<cv::Mat > > &features, string image_dir, string image_list_file);
 void changeStructure(const cv::Mat &plain, vector<cv::Mat> &out);
 void testVocCreation(const vector<vector<cv::Mat > > &features);
 void testDatabase(const vector<vector<cv::Mat > > &features);
 
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-// number of training images
-const int NIMAGES = 4;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -44,14 +40,17 @@ void wait()
 
 // ----------------------------------------------------------------------------
 
-int main()
+int main(int argc, char** argv)
 {
+  string image_dir = argv[1], image_list_file = argv[2];
+
+  // cout << (unsigned long int)time(NULL) << "\n";
+
   vector<vector<cv::Mat > > features;
-  loadFeatures(features);
+  loadFeatures(features, image_dir, image_list_file);
+  // cout << "features size: " << features.size() << "\n";
 
   testVocCreation(features);
-
-  wait();
 
   testDatabase(features);
 
@@ -60,29 +59,56 @@ int main()
 
 // ----------------------------------------------------------------------------
 
-void loadFeatures(vector<vector<cv::Mat > > &features)
+void loadFeatures(vector<vector<cv::Mat > > &features, string image_dir, string image_list_file)
 {
+  cv::theRNG().state = (unsigned long int)time(NULL);
+
   features.clear();
-  features.reserve(NIMAGES);
 
   cv::Ptr<cv::ORB> orb = cv::ORB::create();
 
   cout << "Extracting ORB features..." << endl;
-  for(int i = 0; i < NIMAGES; ++i)
-  {
-    stringstream ss;
-    ss << "images/image" << i << ".png";
 
-    cv::Mat image = cv::imread(ss.str(), 0);
+  string image_file_name;
+
+  ifstream f(image_list_file);
+
+  while(f >> image_file_name)
+  {
+    cv::Mat image_left = cv::imread(image_dir + "/images_left/" + image_file_name, 0);
+    cv::Mat image_right = cv::imread(image_dir + "/images_right/" + image_file_name, 0);
     cv::Mat mask;
     vector<cv::KeyPoint> keypoints;
-    cv::Mat descriptors;
 
-    orb->detectAndCompute(image, mask, keypoints, descriptors);
+    // Use random feature vector as descriptor
+    // cv::Mat descriptors(1200, 32, CV_16U);         // ORB size random feature vector
+    cv::Mat descriptors(1200, 48, CV_16U);            // LoFTR size random feature vector
+
+    cv::randu(descriptors, cv::Scalar(0), cv::Scalar(300));
+
+    // Use ORB descriptor
+    // cv::Mat descriptors;
+    // orb->detectAndCompute(image_left, mask, keypoints, descriptors);
 
     features.push_back(vector<cv::Mat >());
     changeStructure(descriptors, features.back());
   }
+
+  // for(int i = 0; i < NIMAGES; ++i)
+  // {
+  //   stringstream ss;
+  //   ss << "demo/images/image" << i << ".png";
+
+  //   cv::Mat image = cv::imread(ss.str(), 0);
+  //   cv::Mat mask;
+  //   vector<cv::KeyPoint> keypoints;
+  //   cv::Mat descriptors;
+
+  //   orb->detectAndCompute(image, mask, keypoints, descriptors);
+
+  //   features.push_back(vector<cv::Mat >());
+  //   changeStructure(descriptors, features.back());
+  // }
 }
 
 // ----------------------------------------------------------------------------
@@ -101,8 +127,10 @@ void changeStructure(const cv::Mat &plain, vector<cv::Mat> &out)
 
 void testVocCreation(const vector<vector<cv::Mat > > &features)
 {
+  int NIMAGES = features.size();
+
   // branching factor and depth levels 
-  const int k = 9;
+  const int k = 11;
   const int L = 3;
   const WeightingType weight = TF_IDF;
   const ScoringType scoring = L1_NORM;
@@ -117,19 +145,19 @@ void testVocCreation(const vector<vector<cv::Mat > > &features)
   << voc << endl << endl;
 
   // lets do something with this vocabulary
-  cout << "Matching images against themselves (0 low, 1 high): " << endl;
-  BowVector v1, v2;
-  for(int i = 0; i < NIMAGES; i++)
-  {
-    voc.transform(features[i], v1);
-    for(int j = 0; j < NIMAGES; j++)
-    {
-      voc.transform(features[j], v2);
+  // cout << "Matching images against themselves (0 low, 1 high): " << endl;
+  // BowVector v1, v2;
+  // for(int i = 0; i < NIMAGES; i++)
+  // {
+  //   voc.transform(features[i], v1);
+  //   for(int j = 0; j < NIMAGES; j++)
+  //   {
+  //     voc.transform(features[j], v2);
       
-      double score = voc.score(v1, v2);
-      cout << "Image " << i << " vs Image " << j << ": " << score << endl;
-    }
-  }
+  //     double score = voc.score(v1, v2);
+  //     cout << "Image " << i << " vs Image " << j << ": " << score << endl;
+  //   }
+  // }
 
   // save the vocabulary to disk
   cout << endl << "Saving vocabulary..." << endl;
@@ -141,6 +169,8 @@ void testVocCreation(const vector<vector<cv::Mat > > &features)
 
 void testDatabase(const vector<vector<cv::Mat > > &features)
 {
+  int NIMAGES = features.size();
+
   cout << "Creating a small database..." << endl;
 
   // load the vocabulary from disk

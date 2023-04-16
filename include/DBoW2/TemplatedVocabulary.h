@@ -556,6 +556,8 @@ template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::create(
   const std::vector<std::vector<TDescriptor> > &training_features)
 {
+
+  std::cout << "===========================\n";
   m_nodes.clear();
   m_words.clear();
   
@@ -569,6 +571,10 @@ void TemplatedVocabulary<TDescriptor,F>::create(
   std::vector<pDescriptor> features;
   getFeatures(training_features, features);
 
+  // std::cout << "training_features.size: " << training_features[0].size() << "\n";
+  // std::cout << "features.size: " << features[0].size() << "\n";
+
+  // abort();
 
   // create root  
   m_nodes.push_back(Node(0)); // root
@@ -657,6 +663,8 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
   
   if((int)descriptors.size() <= m_k)
   {
+    // std::cout << "++++++++++++++++\n";
+
     // trivial case: one cluster per feature
     groups.resize(descriptors.size());
 
@@ -665,9 +673,13 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
       groups[i].push_back(i);
       clusters.push_back(*descriptors[i]);
     }
+
+    // abort();
   }
   else
   {
+    // std::cout << "****************\n";
+
     // select clusters and groups with kmeans
     
     bool first_time = true;
@@ -682,8 +694,13 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
 
 			if(first_time)
 			{
+
+        // std::cout << "Inside if statement first time\n";
         // random sample 
         initiateClusters(descriptors, clusters);
+        // std::cout << "Completed if statement\n";
+
+        // abort();
       }
       else
       {
@@ -694,6 +711,9 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
           std::vector<pDescriptor> cluster_descriptors;
           cluster_descriptors.reserve(groups[c].size());
           
+          // std::cout << "Group size: " << groups[c].size() << "\n";
+          // abort();
+
           /*
           for(unsigned int d = 0; d < descriptors.size(); ++d)
           {
@@ -709,12 +729,20 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
           {
             cluster_descriptors.push_back(descriptors[*vit]);
           }
-          
+
+          // std::cout << "\tcluster[0] before: " << clusters[0].size() << "\n";
           
           F::meanValue(cluster_descriptors, clusters[c]);
+
+          // std::cout << "\tcluster[0] after: " << clusters[0].size() << "\n";
+
         }
         
       } // if(!first_time)
+
+      // std::cout << "Finished step 1 ...\n";
+      // std::cout << "\tcluster[0].shape: " << clusters[0].size() << "\n";
+      // std::cout << "=====================\n";
 
       // 2. Associate features with clusters
 
@@ -729,8 +757,13 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
       //unsigned int d = 0;
       for(fit = descriptors.begin(); fit != descriptors.end(); ++fit)//, ++d)
       {
+        // std::cout << "a.size: " << (*(*fit)).size() << "\n";
+        // std::cout << "b.size: " << clusters[0].size() << "\n";
+        
         double best_dist = F::distance(*(*fit), clusters[0]);
         unsigned int icluster = 0;
+        
+
         
         for(unsigned int c = 1; c < clusters.size(); ++c)
         {
@@ -749,6 +782,8 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
       }
       
       // kmeans++ ensures all the clusters has any feature associated with them
+
+      // std::cout << "Finished step 2 ....\n";
 
       // 3. check convergence
       if(first_time)
@@ -775,6 +810,12 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
 				last_association = current_association;
 				//last_assoc = assoc.clone();
 			}
+
+      // std::cout << "End of loop, value of goon: " << goon << "\n";
+      // std::cout << "Clusters size: " << clusters.size() << "\n";
+      // std::cout << "Clusters[0] size: " << clusters[0].size() << "\n";
+      
+      // abort();
 			
 		} // while(goon)
     
@@ -861,8 +902,12 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   dit = min_dists.begin();
   for(fit = pfeatures.begin(); fit != pfeatures.end(); ++fit, ++dit)
   {
+    // std::cout << "Inside for loop -----------\n";
     *dit = F::distance(*(*fit), clusters.back());
+    // std::cout << "End of loop -----------\n";
   }  
+
+  // abort();
 
   while((int)clusters.size() < m_k)
   {
@@ -877,6 +922,8 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
       }
     }
     
+    // abort();
+
     // 3.
     double dist_sum = std::accumulate(min_dists.begin(), min_dists.end(), 0.0);
 
