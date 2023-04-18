@@ -29,8 +29,15 @@ set(SRCS
 set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
 set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
 
+set(Python_ADDITIONAL_VERSIONS 3.6)
+find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
+
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}
+)
 
 if(BUILD_DBoW2)
   set(LIB_SHARED "SHARED")
@@ -39,13 +46,21 @@ if(BUILD_DBoW2)
   endif(WIN32)
   add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
   target_include_directories(${PROJECT_NAME} PUBLIC include/DBoW2/ include/)
-  target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+  target_link_libraries(
+    ${PROJECT_NAME} ${OpenCV_LIBS}
+    ${PYTHON_LIBRARIES}
+  )
   set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
 endif(BUILD_DBoW2)
 
 if(BUILD_Demo)
   add_executable(demo demo/demo.cpp)
-  target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS})
+  target_link_libraries(
+    demo 
+    ${PROJECT_NAME} 
+    ${OpenCV_LIBS}
+    ${PYTHON_LIBRARIES}
+  )
   set_target_properties(demo PROPERTIES CXX_STANDARD 11)
   file(COPY demo/images DESTINATION ${CMAKE_BINARY_DIR}/)
 endif(BUILD_Demo)
